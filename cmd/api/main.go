@@ -5,6 +5,7 @@ import (
 	"go_api_gateway/internal/proxy"
 	"log"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -12,6 +13,15 @@ func main() {
 		{URL: config.MustParseURL("http://localhost:8081"), Alive: true},
 		{URL: config.MustParseURL("http://localhost:8082"), Alive: true},
 	}
+
+	client := proxy.NewClient("payment-service")
+
+	for range 10 {
+		_, err := client.Get("https://httpstat.us/500")
+		log.Println("err:", err)
+		time.Sleep(500 * time.Millisecond)
+	}
+
 
 	lb := proxy.NewLoadBalancer(backends)
 
