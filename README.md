@@ -170,7 +170,7 @@ There's a dedicated test script in `test/main.go` to manually verify the circuit
 Run it:
 
 ```bash
-go run test/main.go
+go run test/cb-test/main.go
 ```
 
 **What to expect in the logs:**
