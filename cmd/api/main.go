@@ -1,30 +1,43 @@
 package main
 
 import (
-	"go_api_gateway/config"
-	"go_api_gateway/internal/proxy"
+	"fmt"
 	"log"
 	"net/http"
-	"time"
+
+	"go_api_gateway/config"
+	"go_api_gateway/internal/middleware"
+	"go_api_gateway/internal/proxy"
 )
 
 func main() {
+
+	// =============================
+	// Backend services
+	// =============================
 	backends := []*proxy.Backend{
 		{URL: config.MustParseURL("http://localhost:8081"), Alive: true},
 		{URL: config.MustParseURL("http://localhost:8082"), Alive: true},
 	}
 
-	client := proxy.NewClient("payment-service")
+	// =============================
+	// Load Balancer
+	// =============================
+	loadBalancer := proxy.NewLoadBalancer(backends)
 
-	for range 10 {
-		_, err := client.Get("https://httpstat.us/500")
-		log.Println("err:", err)
-		time.Sleep(500 * time.Millisecond)
-	}
+	// =============================
+	// Redis (Rate Limiter)
+	// =============================
+	redisClient := config.NewRedisClient()
 
+	// =============================
+	// Middleware Chain
+	// =============================
+	handler := middleware.RateLimiterByIP(redisClient)(loadBalancer)
 
-	lb := proxy.NewLoadBalancer(backends)
-
-	log.Println("API Gateway running on :8080")
-	log.Fatal(http.ListenAndServe(":8080", lb))
+	// =============================
+	// Run Server
+	// =============================
+	fmt.Println("🚀 API Gateway running on :8080")
+	log.Fatal(http.ListenAndServe(":8080", handler))
 }

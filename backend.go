@@ -11,10 +11,17 @@ func main() {
 	port := flag.String("port", "8081", "server port")
 	flag.Parse()
 
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Response from backend on port %s\n", *port)
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(
+			w,
+			"Response from backend on port %s | path: %s\n",
+			*port,
+			r.URL.Path,
+		)
 	})
 
 	log.Printf("Backend running on :%s\n", *port)
-	log.Fatal(http.ListenAndServe(":"+*port, handler))
+	log.Fatal(http.ListenAndServe(":"+*port, mux))
 }
